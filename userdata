@@ -1,0 +1,80 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+# (c) 2012, Jan-Piet Mens <jpmens () gmail.com>
+#
+
+DOCUMENTATION = '''
+---
+module: userdata
+short_description: Returns JSON contained in EC2 user_data on an instance
+description:
+     - Returns JSON contained in EC2 user_data on an instance. Register a
+       variable to obtain it.
+version_added: "0.9"
+options:
+examples:
+   - code: "action: userdata"
+     description: "Example from Ansible Playbooks"
+notes:
+# informational: requirements for nodes
+requirements: [ urllib2 ]
+author: Jan-Piet Mens
+'''
+
+HAS_URLLIB2=True
+try:
+    import urllib2
+except ImportError:
+    HAS_URLLIB2=False
+HAS_URLPARSE=True
+
+try:
+    import json
+except ImportError:
+    import simplejson as json
+
+# ==============================================================
+# main
+
+def main():
+
+    if not HAS_URLLIB2:
+        module.fail_json(msg="urllib2 is not installed")
+
+    module = AnsibleModule(
+        argument_spec = dict(
+        )
+    )
+
+    # http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/AESDG-chapter-instancedata.html
+
+    url = 'http://169.254.169.254/latest/user-data'
+    user_data = {}
+    attribs = [ 'public-ipv4', 'public-hostname', 'instance-id', 'instance-type' ]
+    changed=False
+
+    try:
+        req = urllib2.Request(url)
+        response = urllib2.urlopen(req)
+        user_data = json.loads(response.read())
+    except:
+        module.fail_json(msg="Request failed")
+        pass
+
+    for attr in attribs:
+        try:
+            req = urllib2.Request('http://169.254.169.254/latest/meta-data/%s' % attr)
+            response = urllib2.urlopen(req)
+            key = attr.replace('-', '_')
+            user_data[key] = response.read()
+        except:
+            pass
+
+
+    # Mission complete
+    module.exit_json(changed=changed, msg="OK", user_data=user_data)
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()
