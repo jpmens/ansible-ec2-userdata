@@ -49,6 +49,8 @@ def main():
 
     # http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/AESDG-chapter-instancedata.html
 
+    # http://instance-data.ec2.internal/ for DNS name
+
     url = 'http://169.254.169.254/latest/user-data'
     user_data = {}
     attribs = [ 'public-ipv4', 'public-hostname', 'instance-id', 'instance-type' ]
